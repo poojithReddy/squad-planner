@@ -1,0 +1,35 @@
+import "server-only";
+
+import { createClient } from "@/lib/supabase/server";
+import { TEAM_IMAGE_BUCKET } from "@/lib/storage/team-images";
+import type { TeamCardView, Team } from "@/types/team";
+
+async function signedUrl(path: string | null) {
+  if (!path) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.storage.from(TEAM_IMAGE_BUCKET).createSignedUrl(path, 3600);
+  return data?.signedUrl ?? null;
+}
+
+async function withAssetUrls(team: Team): Promise<TeamCardView> {
+  const [logoSignedUrl, bannerSignedUrl] = await Promise.all([signedUrl(team.logo_url), signedUrl(team.banner_url)]);
+  return { ...team, logoSignedUrl, bannerSignedUrl };
+}
+
+export async function getAuthorisedTeams() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("teams").select("*").order("created_at", { ascending: false });
+  if (error) {
+    const setupRequired = error.code === "42P01" || error.code === "PGRST205" || error.message.toLowerCase().includes("schema cache");
+    if (setupRequired) return { teams: [], setupRequired: true };
+    throw new Error("Unable to load your teams.");
+  }
+  return { teams: await Promise.all((data ?? []).map(withAssetUrls)), setupRequired: false };
+}
+
+export async function getAuthorisedTeam(teamId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("teams").select("*").eq("id", teamId).maybeSingle();
+  if (error) throw new Error("Unable to load this team.");
+  return data ? withAssetUrls(data) : null;
+}
