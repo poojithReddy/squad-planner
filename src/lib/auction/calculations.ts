@@ -1,4 +1,22 @@
-import type { AuctionSnapshot, Recommendation } from "@/types/auction";
+import type { AuctionPlayer, AuctionSnapshot, Recommendation } from "@/types/auction";
+
+export type PlanFilter="all"|"A"|"B"|"C"|"none";
+
+export function planLabelsForPlayer(snapshot:AuctionSnapshot,playerId:string){
+  const planIds=new Set(snapshot.selections.filter(selection=>selection.player_id===playerId).map(selection=>selection.probable_team_id));
+  return snapshot.plans.filter(plan=>planIds.has(plan.id)).map(plan=>plan.plan_label).sort();
+}
+
+export function filterPlayersByPlan(snapshot:AuctionSnapshot,players:AuctionPlayer[],plan:PlanFilter){
+  if(plan==="all")return players;
+  return players.filter(player=>{const labels=planLabelsForPlayer(snapshot,player.id);return plan==="none"?!labels.length:labels.includes(plan)});
+}
+
+export function planAuctionProgress(snapshot:AuctionSnapshot,label:"A"|"B"|"C"){
+  const plan=snapshot.plans.find(item=>item.plan_label===label);
+  const players=plan?snapshot.selections.filter(selection=>selection.probable_team_id===plan.id).map(selection=>snapshot.players.find(player=>player.id===selection.player_id)).filter((player):player is AuctionPlayer=>Boolean(player)):[];
+  return {players,secured:players.filter(player=>player.auction_status==="my_team").length,lost:players.filter(player=>player.auction_status==="other_team").length,available:players.filter(player=>player.auction_status==="available").length};
+}
 
 export function auctionTotals(snapshot: AuctionSnapshot) {
   const squad = snapshot.players.filter(player => player.auction_status === "my_team");

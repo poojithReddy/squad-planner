@@ -2,7 +2,7 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
 
 type Variant = "primary" | "secondary" | "destructive" | "ghost";
 const styles: Record<Variant, string> = {
-  primary: "bg-pitch text-white shadow-sm hover:bg-pitch-dark",
+  primary: "team-primary shadow-sm",
   secondary: "border border-slate-300 bg-white text-ink hover:border-pitch hover:text-pitch",
   destructive: "border border-red-200 bg-white text-red-700 hover:bg-red-50",
   ghost: "text-slate-600 hover:bg-slate-100 hover:text-ink",

@@ -1,20 +1,43 @@
 "use server";
+
 import { revalidatePath } from "next/cache";
 import { requireTeamAccess } from "@/lib/planning/access";
-import { TEAM_IMAGE_BUCKET } from "@/lib/storage/team-images";
+import { buildTeamImagePath, TEAM_IMAGE_BUCKET, type TeamImageKind, validateTeamImage } from "@/lib/storage/team-images";
 import { createClient } from "@/lib/supabase/server";
-import type { FormState } from "@/types/forms";
-const allowed = new Set(["image/png", "image/jpeg", "image/webp"]);
-export async function uploadTeamAsset(teamId:string,kind:"logo"|"banner",_state:FormState,formData:FormData):Promise<FormState>{
-  await requireTeamAccess(teamId,true); const file=formData.get("file");
-  if(!(file instanceof File)||file.size===0)return{status:"error",message:"Choose an image to upload."};
-  if(!allowed.has(file.type))return{status:"error",message:"Use a PNG, JPEG or WEBP image."};
-  const limit=kind==="logo"?2*1024*1024:5*1024*1024;
-  if(file.size>limit)return{status:"error",message:`${kind==="logo"?"Logo":"Banner"} must be ${kind==="logo"?"2":"5"} MB or smaller.`};
-  const extension=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg"; const path=`teams/${teamId}/${kind}/${crypto.randomUUID()}.${extension}`; const supabase=await createClient(); const column=kind==="logo"?"logo_url":"banner_url";
-  const{data:team}=await supabase.from("teams").select("logo_url,banner_url").eq("id",teamId).maybeSingle(); const oldPath=team?.[column];
-  const{error:uploadError}=await supabase.storage.from(TEAM_IMAGE_BUCKET).upload(path,file,{contentType:file.type,upsert:false}); if(uploadError)return{status:"error",message:uploadError.message};
-  const update=kind==="logo"?{logo_url:path}:{banner_url:path}; const{error:updateError}=await supabase.from("teams").update(update).eq("id",teamId);
-  if(updateError){await supabase.storage.from(TEAM_IMAGE_BUCKET).remove([path]);return{status:"error",message:"The image uploaded but the team record could not be updated."}}
-  if(oldPath)await supabase.storage.from(TEAM_IMAGE_BUCKET).remove([oldPath]); revalidatePath(`/teams/${teamId}`); revalidatePath("/dashboard"); return{status:"success",message:`${kind==="logo"?"Logo":"Banner"} updated.`};
+
+const BRANDING_ROLES = new Set(["owner", "captain"]);
+type UploadPreparation={ok:true;path:string}|{ok:false;message:string};
+type UploadCompletion={ok:true;message:string}|{ok:false;message:string};
+
+async function requireBrandingAccess(teamId:string){const access=await requireTeamAccess(teamId);return BRANDING_ROLES.has(access.role)}
+
+export async function prepareTeamAssetUpload(teamId:string,kind:TeamImageKind,file:{size:number;type:string}):Promise<UploadPreparation>{
+  if(!await requireBrandingAccess(teamId))return{ok:false,message:"Only the team owner or captain can update team branding."};
+  const validationError=validateTeamImage(kind,file);
+  if(validationError)return{ok:false,message:validationError};
+  return{ok:true,path:buildTeamImagePath(teamId,kind,file.type)};
+}
+
+export async function completeTeamAssetUpload(teamId:string,kind:TeamImageKind,path:string):Promise<UploadCompletion>{
+  if(!await requireBrandingAccess(teamId))return{ok:false,message:"Only the team owner or captain can update team branding."};
+  const prefix=`teams/${teamId}/${kind}/`;
+  const filename=path.slice(prefix.length);
+  if(!path.startsWith(prefix)||!new RegExp(`^${kind}-[0-9]+-[a-zA-Z0-9-]+\\.(png|jpg|webp)$`).test(filename))return{ok:false,message:"The uploaded image path is invalid."};
+
+  const supabase=await createClient();
+  const {data:objects,error:listError}=await supabase.storage.from(TEAM_IMAGE_BUCKET).list(prefix.replace(/\/$/,""),{search:filename,limit:10});
+  if(listError||!objects?.some(object=>object.name===filename))return{ok:false,message:`We couldn't verify the uploaded ${kind}. Please try again.`};
+
+  const column=kind==="logo"?"logo_url":"banner_url";
+  const {data:team,error:teamError}=await supabase.from("teams").select("logo_url,banner_url").eq("id",teamId).maybeSingle();
+  if(teamError||!team)return{ok:false,message:"We couldn't verify this team. Please refresh and try again."};
+  const oldPath=team[column];
+  const update=kind==="logo"?{logo_url:path}:{banner_url:path};
+  const {data:updated,error:updateError}=await supabase.from("teams").update(update).eq("id",teamId).select("id").maybeSingle();
+  if(updateError||!updated){await supabase.storage.from(TEAM_IMAGE_BUCKET).remove([path]);return{ok:false,message:`The ${kind} uploaded, but we couldn't save it to your team. Please try again.`}}
+
+  if(oldPath&&oldPath!==path)await supabase.storage.from(TEAM_IMAGE_BUCKET).remove([oldPath]);
+  revalidatePath(`/teams/${teamId}`,"layout");
+  revalidatePath("/dashboard");
+  return{ok:true,message:`Team ${kind} updated successfully`};
 }

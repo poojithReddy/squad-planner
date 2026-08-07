@@ -1,1 +1,5 @@
-import Link from"next/link";const links=[["","Dashboard"],["players","Players"],["buckets","Buckets"],["planning","Planning"],["auction","Auction"],["squad","Squad"],["tournament","Tournament"],["opportunities","Opportunities"],["duties","Volunteer Duties"],["reports","Reports"]]as const;export function TeamNav({teamId}:{teamId:string}){return <nav aria-label="Team navigation" className="mb-6 hidden gap-1 rounded-2xl border bg-white p-1.5 shadow-sm xl:flex">{links.map(([path,label])=><Link key={label} href={`/teams/${teamId}${path?`/${path}`:""}`} className="min-h-10 shrink-0 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-pitch/10 hover:text-pitch">{label}</Link>)}</nav>}
+/** Primary team navigation is provided by the authenticated sidebar/drawer. */
+export function TeamNav({teamId}:{teamId:string}){
+  void teamId;
+  return null;
+}

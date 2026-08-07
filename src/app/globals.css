@@ -6,6 +6,13 @@
   --pitch: #16734b;
   --pitch-dark: #0e5437;
   --lime: #c8f04b;
+  --team-primary: var(--pitch);
+  --team-primary-hover: var(--pitch-dark);
+  --team-primary-pressed: #0a422b;
+  --team-primary-foreground: #ffffff;
+  --team-primary-soft: #e8f4ee;
+  --team-primary-border: #8bbba2;
+  --team-focus: #69a889;
 }
 
 @theme inline {
@@ -43,9 +50,21 @@ a {
 }
 
 :focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--pitch) 35%, transparent);
+  outline: 3px solid var(--team-focus);
   outline-offset: 3px;
 }
+
+[data-team-workspace="true"] input[type="checkbox"],
+[data-team-workspace="true"] input[type="radio"] { accent-color: var(--team-primary); }
+
+.team-primary { background: var(--team-primary); color: var(--team-primary-foreground); }
+.team-primary:hover { background: var(--team-primary-hover); }
+.team-primary:active { background: var(--team-primary-pressed); }
+.team-primary:disabled { background: #cbd5e1; color: #64748b; }
+.team-soft { background: var(--team-primary-soft); border-color: var(--team-primary-border); color: var(--team-primary); }
+.team-border { border-color: var(--team-primary-border); }
+.team-accent-text { color: var(--team-primary); }
+[data-team-workspace="true"] .bg-pitch.text-white { color: var(--team-primary-foreground); }
 
 ::selection {
   background: var(--lime);

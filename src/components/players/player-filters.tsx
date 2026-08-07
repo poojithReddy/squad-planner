@@ -10,6 +10,6 @@ export function PlayerFilters({ buckets, values }: { buckets: AuctionBucket[]; v
     <select name="priority" defaultValue={values.priority ?? ""} className={cls}><option value="">All priorities</option>{Object.entries(PRIORITY_LABELS).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select>
     <select name="availability" defaultValue={values.availability ?? ""} className={cls}><option value="">All availability</option><option value="full">Full League</option><option value="partial">Partial</option><option value="unknown">Unknown</option></select>
     <select name="status" defaultValue={values.status ?? "available"} className={cls}><option value="available">Available</option><option value="my_team">My Team</option><option value="other_team">Other Team</option><option value="">All statuses</option></select>
-    <div className="flex gap-2 sm:col-span-2 lg:col-span-6"><button className="min-h-11 rounded-xl bg-ink px-5 text-sm font-bold text-white">Apply filters</button><a href="?status=" className="min-h-11 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600">Clear</a></div>
+    <div className="flex gap-2 sm:col-span-2 lg:col-span-6"><button className="team-primary min-h-11 rounded-xl px-5 text-sm font-bold">Apply filters</button><a href="?status=" className="min-h-11 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600">Clear</a></div>
   </form>;
 }
