@@ -32,7 +32,7 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const isAuthenticated = Boolean(data?.claims?.sub);
   const pathname = request.nextUrl.pathname;
-  const isProtected = pathname.startsWith("/dashboard") || pathname.startsWith("/teams");
+  const isProtected = pathname.startsWith("/dashboard") || pathname.startsWith("/teams") || pathname.startsWith("/profile");
   const isGuestOnly = pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password";
 
   if (!isAuthenticated && isProtected) {

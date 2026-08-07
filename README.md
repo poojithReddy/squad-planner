@@ -23,6 +23,7 @@ Set the hosted Project URL and publishable key in `.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 `.env.local` is ignored by Git. Never place a secret key, service-role key, database password, or personal access token in the application environment.
@@ -54,7 +55,7 @@ The route reports only configuration and availability booleans. It never display
 
 ## Production
 
-Run `npm run lint`, `npx tsc --noEmit`, `npm test`, and `npm run build` before release. Follow [production deployment](docs/PRODUCTION_DEPLOYMENT.md) and [email setup](docs/EMAIL_SETUP.md). Never commit application, database, or SMTP credentials.
+Run `npm run lint`, `npx tsc --noEmit`, `npm test`, and `npm run build` before release. Follow the [Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md) and [email setup](docs/EMAIL_SETUP.md). Never commit application, database, or SMTP credentials.
 
 Bucket-scoped `.xlsx`/`.csv` player imports and imported summary statistics are documented in [Bucket player import](docs/BUCKET_PLAYER_IMPORT.md). Apply Migration 007 before using that workflow.
 

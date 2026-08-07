@@ -14,7 +14,7 @@ function authError(message: string) {
   if (message.toLowerCase().includes("invalid login")) return "Email or password is incorrect.";
   if (message.toLowerCase().includes("already registered")) return "An account already exists for this email.";
   if (message.toLowerCase().includes("rate limit")) return "Too many attempts. Please wait and try again.";
-  return message;
+  return "We couldn't complete that request. Please try again.";
 }
 
 

@@ -33,7 +33,7 @@ export async function createPlayer(teamId: string, _state: FormState, formData: 
   if (!parsed.data) return { status: "error", message: parsed.error ?? "Invalid player." };
   const supabase = await createClient();
   const { error } = await supabase.from("players").insert({ team_id: teamId, ...parsed.data });
-  if (error) return { status: "error", message: error.message.includes("players_bucket_same_team") ? "That bucket belongs to another team." : error.message };
+  if (error) return { status: "error", message: error.message.includes("players_bucket_same_team") ? "That bucket belongs to another team." : "We couldn't create this player. Please try again." };
   revalidatePath(`/teams/${teamId}/players`);
   redirect(`/teams/${teamId}/players`);
 }
@@ -44,7 +44,7 @@ export async function updatePlayer(teamId: string, playerId: string, _state: For
   if (!parsed.data) return { status: "error", message: parsed.error ?? "Invalid player." };
   const supabase = await createClient();
   const { error } = await supabase.from("players").update(parsed.data).eq("team_id", teamId).eq("id", playerId);
-  if (error) return { status: "error", message: error.message };
+  if (error) return { status: "error", message: "We couldn't update this player. Please try again." };
   revalidatePath(`/teams/${teamId}/players`);
   redirect(`/teams/${teamId}/players`);
 }
