@@ -2,7 +2,7 @@
 
 Responsive cricket tournament squad planning built with Next.js, TypeScript, Tailwind CSS, and hosted Supabase.
 
-The current foundation includes email/password authentication, password recovery, SSR sessions, protected routes, team-scoped RLS, a private team-assets bucket, an authenticated dashboard, and a temporary atomic team-creation test. Player import and auction functionality are intentionally out of scope.
+The production-ready application includes authentication and profiles, team-scoped player planning, auctions, squads, tournaments, opportunity tracking, volunteer duties, and reporting. Supabase provides PostgreSQL, Auth, private Storage, RLS, and Realtime; the Next.js architecture is compatible with Vercel.
 
 ## Requirements
 
@@ -31,9 +31,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 
 Do not use Supabase CLI linking for this project. Follow [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md) and manually run:
 
-```text
-supabase/migrations/001_initial_schema.sql
-```
+Apply `supabase/migrations/001_initial_schema.sql` through `supabase/migrations/006_profile_production.sql` in numeric order.
 
 through **Supabase Dashboard → SQUADPLANNERDB → SQL Editor → New Query**.
 
@@ -53,6 +51,12 @@ The migration creates:
 Open [http://localhost:3000/dev/supabase-check](http://localhost:3000/dev/supabase-check).
 
 The route reports only configuration and availability booleans. It never displays keys, tokens, cookies, credentials, connection strings, or database rows. It returns 404 in production. Before the migration is applied, table checks are expected to fail gracefully.
+
+## Production
+
+Run `npm run lint`, `npx tsc --noEmit`, `npm test`, and `npm run build` before release. Follow [production deployment](docs/PRODUCTION_DEPLOYMENT.md) and [email setup](docs/EMAIL_SETUP.md). Never commit application, database, or SMTP credentials.
+
+Bucket-scoped `.xlsx`/`.csv` player imports and imported summary statistics are documented in [Bucket player import](docs/BUCKET_PLAYER_IMPORT.md). Apply Migration 007 before using that workflow.
 
 ## Authentication routes
 

@@ -1,0 +1,2 @@
+import"server-only";import{headers}from"next/headers";
+export async function applicationOrigin(){const h=await headers(),origin=h.get("origin");if(origin)return new URL(origin).origin;const forwarded=h.get("x-forwarded-host"),proto=h.get("x-forwarded-proto")??"https";if(forwarded)return`${proto}://${forwarded}`;if(process.env.VERCEL_URL)return`https://${process.env.VERCEL_URL}`;if(process.env.NODE_ENV!=="production")return"http://localhost:3000";throw new Error("Application origin is unavailable.")}

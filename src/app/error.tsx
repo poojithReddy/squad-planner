@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 
 export default function ErrorPage({
   error,
@@ -10,7 +11,7 @@ export default function ErrorPage({
   retry: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    if (process.env.NODE_ENV === "development") console.error(error);
   }, [error]);
 
   return (
@@ -24,6 +25,7 @@ export default function ErrorPage({
         <button type="button" onClick={retry} className="mt-6 min-h-11 rounded-xl bg-pitch px-5 py-2.5 text-sm font-semibold text-white hover:bg-pitch-dark">
           Try again
         </button>
+        <Link href="/dashboard" className="ml-3 inline-flex min-h-11 items-center rounded-xl border px-5 text-sm font-semibold">Return to Dashboard</Link>
       </div>
     </div>
   );

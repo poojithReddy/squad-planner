@@ -5,6 +5,7 @@ import { signOut } from "@/app/(auth)/actions";
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
   { href: "/teams/new", label: "Create team", icon: "plus" },
+  { href: "/profile", label: "Profile", icon: "user" },
 ];
 
 export function DashboardShell({ children, displayName }: { children: React.ReactNode; displayName: string }) {
@@ -25,10 +26,17 @@ export function DashboardShell({ children, displayName }: { children: React.Reac
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
           <Link href="/dashboard" className="flex items-center gap-2.5 font-bold lg:hidden"><span className="grid size-9 place-items-center rounded-xl bg-pitch text-white"><BrandMark /></span>Squad Planner</Link>
           <p className="hidden text-sm font-semibold text-slate-600 lg:block">Tournament workspace</p>
-          <form action={signOut}><button className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 hover:border-slate-300 hover:text-ink">Sign out</button></form>
+          <details className="relative">
+            <summary className="min-h-10 cursor-pointer list-none rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">{displayName}</summary>
+            <div className="absolute right-0 mt-2 w-44 rounded-xl border bg-white p-2 shadow-lg">
+              <Link href="/profile" className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-50">My Profile</Link>
+              <Link href="/dashboard" className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-50">My Teams</Link>
+              <form action={signOut}><button className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50">Logout</button></form>
+            </div>
+          </details>
         </header>
         <main id="main-content" className="pb-24 lg:pb-0">{children}</main>
-        <nav aria-label="Mobile dashboard navigation" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 border-t border-slate-200 bg-white/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
+        <nav aria-label="Mobile dashboard navigation" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-slate-200 bg-white/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
           {links.map((link) => <DashboardLink key={link.href} {...link} mobile />)}
         </nav>
       </div>
@@ -45,5 +53,6 @@ function BrandMark() {
 }
 
 function Icon({ name }: { name: string }) {
-  return <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={name === "plus" ? "M12 5v14M5 12h14" : "M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z"} /></svg>;
+  const path = name === "plus" ? "M12 5v14M5 12h14" : name === "user" ? "M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" : "M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z";
+  return <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={path} /></svg>;
 }

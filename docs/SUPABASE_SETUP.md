@@ -273,3 +273,66 @@ order by tablename;
 10. Open a second authenticated browser/session for the same team and confirm player, squad, history and lifecycle changes arrive without refresh.
 11. Try a bucket maximum or squad limit and confirm the explicit override prompt appears.
 12. Complete the auction, open `/teams/{teamId}/squad`, and confirm Final Squad and summary totals.
+
+## Apply Phase 5 migration
+
+Migrations 001–003 must already be applied.
+
+1. Open Supabase Dashboard and select **SQUADPLANNERDB**.
+2. Open **SQL Editor** and choose **New Query**.
+3. Open `supabase/migrations/004_tournament_matches.sql` locally.
+4. Copy the complete SQL, paste it into the editor, and click **Run** once.
+5. Restart `npm run dev` and open the team Tournament module.
+
+Migration 004 creates `tournaments`, `matches`, and `match_players`; updated-at triggers; team-scoped RLS; same-team composite foreign keys; final/live-squad validation; duplicate-player prevention; and the one-captain-per-match constraint.
+
+### Phase 5 verification SQL
+
+```sql
+select public.phase5_setup_status();
+select relname, relrowsecurity from pg_class where oid in ('public.tournaments'::regclass,'public.matches'::regclass,'public.match_players'::regclass);
+select conrelid::regclass, conname, pg_get_constraintdef(oid) from pg_constraint where conrelid in ('public.tournaments'::regclass,'public.matches'::regclass,'public.match_players'::regclass) order by 1,2;
+```
+
+### Manual tournament simulation
+
+1. Create a tournament with valid dates and squad sizes.
+2. Add three fixtures.
+3. Open Match 1 and select a Playing XI or other configured size.
+4. Mark one player unavailable and replace that player.
+5. Set one Match Captain and one Wicketkeeper.
+6. Mark selected players as Playing or Substitute.
+7. Enter a Won result, team score, opponent score, and result notes.
+8. Confirm participation indicators update on the next match.
+9. Confirm the tournament overview shows matches played, wins, losses, next fixture, and last result.
+10. Repeat match selection on a mobile-width browser.
+
+## Apply Phase 6 migration
+
+After Migrations 001–004, open **SQUADPLANNERDB → SQL Editor → New Query**, paste the complete contents of `supabase/migrations/005_duties_reporting.sql`, and click **Run** once. Restart `npm run dev` afterward.
+
+Migration 005 creates `volunteer_duties`, `volunteer_duty_assignments`, team-scoped RLS, composite cross-team protections, the atomic `assign_volunteer` conflict-checking RPC, indexes, and guarded Realtime publication entries.
+
+```sql
+select public.phase6_setup_status();
+```
+
+### Phase 6 manual simulation
+
+1. Use a tournament containing at least three fixtures and confirm Opportunity counts.
+2. Open a player with no appearance and inspect match history.
+3. Create an Umpire duty and assign one suggested player.
+4. Create a Scorer duty and confirm duty fairness counts change.
+5. Attempt a same-time, playing-player, unavailable-player, or over-capacity assignment and verify the warning/override flow.
+6. Complete a duty and confirm the dashboard status.
+7. Open Reports and verify match, auction, player usage, role, Plan A/B/C, and volunteer summaries.
+# Migration 006: profile and production foundation
+
+After Migrations 001-005 succeed, copy all of `supabase/migrations/006_profile_production.sql` into **Supabase Dashboard > SQL Editor > New Query** and click **Run**. Do not use `db push`.
+
+Verify it with `select public.phase7_setup_status();`. All returned values should be `true`. It adds optional profile fields and the private `profile-assets` bucket with self-only avatar policies.
+# Migration 007: bucket player statistics import
+
+After Migration 006 succeeds, copy all of `supabase/migrations/007_bucket_player_stats_import.sql` into **Supabase Dashboard > SQL Editor > New Query** and click **Run**. Do not use `db push`.
+
+Verify it with `select public.phase8_setup_status();`. All returned values should be `true`. See `docs/BUCKET_PLAYER_IMPORT.md` for the supported spreadsheet format and normalization rules.

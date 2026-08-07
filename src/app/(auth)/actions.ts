@@ -1,9 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { applicationOrigin } from "@/lib/auth/origin";
 import type { FormState } from "@/types/forms";
 
 function value(formData: FormData, key: string) {
@@ -17,10 +17,6 @@ function authError(message: string) {
   return message;
 }
 
-async function appOrigin() {
-  const requestHeaders = await headers();
-  return requestHeaders.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-}
 
 export async function signIn(_state: FormState, formData: FormData): Promise<FormState> {
   const email = value(formData, "email").toLowerCase();
@@ -51,7 +47,7 @@ export async function signUp(_state: FormState, formData: FormData): Promise<For
     password,
     options: {
       data: { full_name: fullName },
-      emailRedirectTo: `${await appOrigin()}/auth/callback?next=/dashboard`,
+      emailRedirectTo: `${await applicationOrigin()}/auth/callback?next=/dashboard`,
     },
   });
   if (error) return { status: "error", message: authError(error.message), fields };
@@ -66,7 +62,7 @@ export async function requestPasswordReset(_state: FormState, formData: FormData
 
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${await appOrigin()}/auth/callback?next=/reset-password`,
+    redirectTo: `${await applicationOrigin()}/auth/callback?next=/reset-password`,
   });
   if (error) return { status: "error", message: authError(error.message), fields: { email } };
 
