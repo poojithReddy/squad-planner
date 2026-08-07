@@ -1,58 +1,23 @@
-import { EmptyState } from "@/components/feedback/empty-state";
+import type { Metadata } from "next";
+import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
+import { buttonClass } from "@/components/ui/button";
 
-export default function HomePage() {
-  return (
-    <AppShell><div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
-      <section className="overflow-hidden rounded-3xl bg-ink px-5 py-8 text-white shadow-sm sm:px-8 sm:py-10 lg:grid lg:grid-cols-[1.35fr_0.65fr] lg:items-end lg:gap-12 lg:px-12 lg:py-12">
-        <div>
-          <p className="mb-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-lime">
-            Tournament command centre
-          </p>
-          <h1 className="max-w-3xl text-3xl font-bold tracking-[-0.04em] sm:text-4xl lg:text-5xl">
-            Build your squad. Own the auction. Play to win.
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
-            Squad Planner brings team preparation, live auction decisions, and
-            match-day coordination into one focused workspace.
-          </p>
-        </div>
+export const metadata: Metadata = { title:{absolute:"Squad Planner – Cricket Auction & Team Management"}, description:"Plan cricket auctions, manage squads, organise fixtures, track player opportunities and coordinate tournament duties.", alternates:{canonical:"/"} };
 
-        <div className="mt-8 grid grid-cols-2 gap-3 lg:mt-0">
-          <Stat label="Teams" value="—" />
-          <Stat label="Players" value="—" />
-          <Stat label="Fixtures" value="—" />
-          <Stat label="Budget used" value="—" />
-        </div>
-      </section>
+const benefits=[
+  ["Plan the auction","Create custom buckets, private priorities and three alternative squad plans."],
+  ["Run auction day","Make quick, auditable decisions with live budgets and realtime team updates."],
+  ["Manage the tournament","Build match squads, record results and understand player opportunities."],
+  ["Share the workload","Coordinate volunteer duties fairly without losing sight of availability."],
+];
+const features=["Excel and CSV player imports","Custom auction buckets","Plan A, B and C shortlists","Live auction and squad tracking","Realtime team updates","Fixtures and match selection","Participation insights","Volunteer duty planning"];
+export default function HomePage(){return <AppShell>
+  <section className="relative overflow-hidden border-b border-slate-200 bg-white"><div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:py-24"><div><p className="inline-flex rounded-full bg-pitch/10 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-pitch">Cricket team command centre</p><h1 className="mt-6 max-w-4xl text-4xl font-black leading-[1.04] tracking-[-0.055em] text-ink sm:text-5xl lg:text-6xl">Build your squad. Plan your auction. Manage your tournament.</h1><p className="mt-6 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">Squad Planner gives cricket teams one secure place to prepare for auction day, manage a live squad and coordinate every fixture.</p><div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/signup" className={buttonClass("primary","min-h-12 px-6")}>Create Your Team <span aria-hidden="true">→</span></Link><Link href="/login" className={buttonClass("secondary","min-h-12 px-6")}>Sign In</Link></div><p className="mt-5 text-sm text-slate-500">Designed for captains, managers and tournament teams on every screen size.</p></div><ProductPreview/></div></section>
+  <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"><div className="max-w-2xl"><p className="text-sm font-extrabold uppercase tracking-[0.16em] text-pitch">One connected workspace</p><h2 className="mt-3 text-3xl font-black tracking-[-0.04em] sm:text-4xl">From shortlist to final squad</h2></div><div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{benefits.map(([title,copy],i)=><article key={title} className="rounded-2xl border bg-white p-5 shadow-sm"><span className="grid size-10 place-items-center rounded-xl bg-pitch/10 text-sm font-black text-pitch">0{i+1}</span><h3 className="mt-5 text-lg font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{copy}</p></article>)}</div></section>
+  <section id="how-it-works" className="scroll-mt-20 bg-ink text-white"><div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"><p className="text-sm font-extrabold uppercase tracking-[0.16em] text-lime">How it works</p><h2 className="mt-3 text-3xl font-black tracking-[-0.04em]">Five steps. One clear season.</h2><ol className="mt-9 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">{["Create Team","Import Players","Build Auction Plan","Run Auction","Manage Tournament"].map((step,index)=><li key={step} className="rounded-2xl border border-white/10 bg-white/[0.05] p-5"><span className="text-xs font-black text-lime">STEP {index+1}</span><p className="mt-3 font-bold">{step}</p></li>)}</ol></div></section>
+  <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"><div className="grid gap-10 lg:grid-cols-[.7fr_1.3fr]"><div><p className="text-sm font-extrabold uppercase tracking-[0.16em] text-pitch">Feature highlights</p><h2 className="mt-3 text-3xl font-black tracking-[-0.04em]">Built around real cricket workflows</h2><p className="mt-4 text-slate-600">Every module shares the same team permissions and private data model.</p><Link href="/features" className="mt-6 inline-flex font-bold text-pitch">Explore all features <span aria-hidden="true">→</span></Link></div><ul className="grid gap-3 sm:grid-cols-2">{features.map(feature=><li key={feature} className="flex items-center gap-3 rounded-xl border bg-white p-4 font-semibold"><span className="grid size-7 place-items-center rounded-full bg-emerald-50 text-emerald-700" aria-hidden="true">✓</span>{feature}</li>)}</ul></div></section>
+  <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8"><div className="rounded-3xl bg-pitch px-6 py-10 text-white sm:px-10 lg:flex lg:items-center lg:justify-between"><div><h2 className="text-3xl font-black tracking-[-0.04em]">Ready to plan your next winning squad?</h2><p className="mt-2 text-emerald-50">Create an account and bring your team planning into one place.</p></div><Link href="/signup" className="mt-6 inline-flex min-h-12 items-center rounded-xl bg-white px-6 font-bold text-pitch lg:mt-0">Create Account</Link></div></section>
+  </AppShell>}
 
-      <section aria-labelledby="teams-heading" className="mt-8 sm:mt-10">
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-pitch">Your tournament</p>
-            <h2 id="teams-heading" className="mt-1 text-2xl font-bold tracking-tight text-ink">
-              Teams
-            </h2>
-          </div>
-          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">
-            Foundation preview
-          </span>
-        </div>
-
-        <EmptyState
-          title="Your teams will appear here"
-          description="Team creation and member access are planned for the next product phase. The responsive workspace is ready for them."
-        />
-      </section>
-    </div></AppShell>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
-      <p className="text-2xl font-bold text-lime">{value}</p>
-      <p className="mt-1 text-xs font-medium text-slate-400">{label}</p>
-    </div>
-  );
-}
+function ProductPreview(){return <div className="relative mx-auto w-full max-w-xl rounded-3xl border border-slate-200 bg-canvas p-4 shadow-[0_24px_70px_rgba(15,23,42,.12)] sm:p-6"><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-pitch">Live auction</p><p className="mt-1 text-lg font-black">Thunder Knights</p></div><span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">Live</span></div><div className="mt-5 grid grid-cols-3 gap-2">{[["Squad","12 / 18"],["Spent","660"],["Remaining","340"]].map(([l,v])=><div key={l} className="rounded-xl bg-white p-3"><p className="text-xs text-slate-500">{l}</p><p className="mt-1 font-black">{v}</p></div>)}</div><div className="mt-4 rounded-2xl bg-white p-4"><p className="text-xs font-bold text-slate-500">RECOMMENDED NEXT TARGET</p><p className="mt-2 text-xl font-black">Ravi Kumar</p><p className="mt-1 text-sm text-slate-500">Plan A · High priority · Full league</p><div className="mt-4 h-2 rounded-full bg-slate-100"><div className="h-2 w-2/3 rounded-full bg-pitch"/></div></div></div>}

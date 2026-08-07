@@ -24,11 +24,18 @@
 
 html {
   background: var(--canvas);
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
+  overflow-x: hidden;
+  color: var(--ink);
+  background: var(--canvas);
 }
+
+button, input, select, textarea { font: inherit; }
+button, summary { touch-action: manipulation; }
 
 button,
 a {

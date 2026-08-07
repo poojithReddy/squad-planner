@@ -1,0 +1,4 @@
+import Link from "next/link";
+import { Brand } from "@/components/ui/brand";
+
+export function PublicFooter(){return <footer className="border-t border-slate-200 bg-white"><div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1fr_auto] md:items-end lg:px-8"><div><Brand/><p className="mt-3 max-w-md text-sm leading-6 text-slate-500">Cricket auction planning, squad management and tournament coordination in one secure workspace.</p></div><nav aria-label="Footer navigation" className="flex flex-wrap gap-x-5 gap-y-3 text-sm font-semibold text-slate-600"><Link href="/about">About</Link><Link href="/features">Features</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav><p className="text-xs text-slate-500 md:col-span-2">© {new Date().getFullYear()} Squad Planner. All rights reserved.</p></div></footer>}

@@ -1,0 +1,3 @@
+import type { Metadata } from "next";import { AppShell } from "@/components/layout/app-shell";
+export const metadata:Metadata={title:"Terms",robots:{index:false,follow:true}};
+export default function Terms(){return <AppShell><article className="mx-auto max-w-3xl px-4 py-14 sm:px-6"><h1 className="text-4xl font-black">Terms</h1><p className="mt-5 leading-7 text-slate-600">Use Squad Planner responsibly and only upload information you are authorised to manage. Tournament decisions remain the responsibility of each team.</p><p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">Final legal terms are still required before wider public release.</p></article></AppShell>}
