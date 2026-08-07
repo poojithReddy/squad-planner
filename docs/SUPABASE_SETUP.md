@@ -164,3 +164,112 @@ where (schemaname = 'public' and tablename in ('profiles', 'teams', 'team_member
    or (schemaname = 'storage' and tablename = 'objects')
 order by schemaname, tablename, policyname;
 ```
+
+## Apply Phase 3 migration
+
+Migration 001 must already be present. Do not use `supabase link`, `supabase db push`, or `supabase db reset`.
+
+1. Open the Supabase Dashboard.
+2. Open **SQUADPLANNERDB**.
+3. Click **SQL Editor**.
+4. Click **New Query**.
+5. Open `supabase/migrations/002_players_buckets_planning.sql` locally.
+6. Copy the entire file and paste it into the query editor.
+7. Confirm **SQUADPLANNERDB** is selected.
+8. Click **Run** once.
+9. Refresh `http://localhost:3000/dev/supabase-check` and confirm all four Phase 3 checks are available.
+
+Migration 002 creates `players`, `auction_buckets`, `probable_teams`, and `probable_team_players`. It also adds automatic Plan A/B/C creation, updated-at triggers, role-aware RLS policies, composite foreign keys that prevent cross-team assignments, and a safe development readiness function.
+
+### Phase 3 read-only verification SQL
+
+```sql
+select table_name
+from information_schema.tables
+where table_schema = 'public'
+  and table_name in ('players','auction_buckets','probable_teams','probable_team_players')
+order by table_name;
+
+select c.relname as table_name, c.relrowsecurity as rls_enabled
+from pg_catalog.pg_class c
+join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+where n.nspname = 'public'
+  and c.relname in ('players','auction_buckets','probable_teams','probable_team_players')
+order by c.relname;
+
+select conrelid::regclass as table_name, conname, contype,
+       pg_get_constraintdef(oid) as definition
+from pg_catalog.pg_constraint
+where conrelid in (
+  'public.players'::regclass,
+  'public.auction_buckets'::regclass,
+  'public.probable_teams'::regclass,
+  'public.probable_team_players'::regclass
+)
+order by conrelid::regclass::text, conname;
+
+select schemaname, tablename, policyname, roles, cmd
+from pg_catalog.pg_policies
+where schemaname = 'public'
+  and tablename in ('players','auction_buckets','probable_teams','probable_team_players')
+order by tablename, policyname;
+
+select public.phase3_setup_status();
+```
+
+The application does not seed players. Test imports are only written after mapping, validation, duplicate choice, and explicit confirmation.
+
+## Apply Phase 4 migration
+
+Migration 001 and Migration 002 must already be applied.
+
+1. Open Supabase Dashboard and select **SQUADPLANNERDB**.
+2. Open **SQL Editor** and click **New Query**.
+3. Open `supabase/migrations/003_live_auction.sql` locally.
+4. Copy the entire file into SQL Editor.
+5. Confirm the selected project and click **Run** once.
+6. Restart `npm run dev` and open `/dev/supabase-check`.
+7. Confirm all three Phase 4 checks show Available.
+
+Migration 003 adds auction lifecycle status to teams, immutable auction and lifecycle history, atomic concurrency-safe auction RPCs, RLS, performance indexes, and Realtime publication entries. The SQL adds `players`, `auction_history`, and `teams` to the existing `supabase_realtime` publication when that publication exists. No separate Dashboard toggle is required when the Phase 4 Realtime check passes.
+
+### Phase 4 verification SQL
+
+```sql
+select column_name, data_type, column_default
+from information_schema.columns
+where table_schema='public' and table_name='teams' and column_name='auction_status';
+
+select table_name
+from information_schema.tables
+where table_schema='public' and table_name in ('auction_history','auction_lifecycle_history');
+
+select public.phase4_setup_status();
+
+select schemaname, tablename, policyname, cmd
+from pg_catalog.pg_policies
+where schemaname='public' and tablename in ('auction_history','auction_lifecycle_history')
+order by tablename, policyname;
+
+select schemaname, tablename
+from pg_catalog.pg_publication_tables
+where pubname='supabase_realtime'
+  and schemaname='public'
+  and tablename in ('players','auction_history','teams')
+order by tablename;
+```
+
+### Manual auction simulation
+
+1. Open a team and create at least two available players.
+2. Open `/teams/{teamId}/auction` and start the live auction.
+3. Search Player A and mark My Team at price 70.
+4. Confirm Player A appears immediately in My Live Squad and `/squad`.
+5. Confirm total and bucket spending update and Plan A reflects Secured when applicable.
+6. Mark Player B Other Team and confirm the red text-labelled state.
+7. Confirm the recommended target changes.
+8. Undo Player A and confirm budget, squad and bucket counts restore.
+9. Purchase Player A again at price 0 and confirm 0 is accepted.
+10. Open a second authenticated browser/session for the same team and confirm player, squad, history and lifecycle changes arrive without refresh.
+11. Try a bucket maximum or squad limit and confirm the explicit override prompt appears.
+12. Complete the auction, open `/teams/{teamId}/squad`, and confirm Final Squad and summary totals.

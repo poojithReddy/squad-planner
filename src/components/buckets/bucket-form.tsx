@@ -1,0 +1,8 @@
+"use client";
+import { useActionState } from "react";
+import { FormMessage } from "@/components/forms/form-message";
+import { SubmitButton } from "@/components/forms/submit-button";
+import type { AuctionBucket } from "@/types/planning";
+import { initialFormState, type FormState } from "@/types/forms";
+
+export function BucketForm({ action, bucket, compact=false }: { action:(state:FormState,data:FormData)=>Promise<FormState>; bucket?:AuctionBucket; compact?:boolean }) { const [state, formAction] = useActionState(action, initialFormState); const cls="mt-1 min-h-11 w-full rounded-xl border border-slate-300 px-3"; return <form action={formAction} className="space-y-4"><div className={`grid gap-4 ${compact ? "" : "sm:grid-cols-2"}`}><label className="text-sm font-semibold">Name<input name="name" required defaultValue={bucket?.name} className={cls}/></label><label className="text-sm font-semibold">Description<input name="description" defaultValue={bucket?.description ?? ""} className={cls}/></label><label className="text-sm font-semibold">Minimum players<input name="minimumPlayers" type="number" min="0" step="1" defaultValue={bucket?.minimum_players ?? 0} className={cls}/></label><label className="text-sm font-semibold">Maximum players<input name="maximumPlayers" type="number" min="0" step="1" defaultValue={bucket?.maximum_players ?? ""} className={cls}/></label><label className="text-sm font-semibold">Planned budget<input name="plannedBudget" type="number" min="0" step="0.01" defaultValue={bucket?.planned_budget ?? 0} className={cls}/></label></div><FormMessage state={state}/><SubmitButton pendingLabel="Saving…">{bucket ? "Update bucket" : "Create bucket"}</SubmitButton></form>; }

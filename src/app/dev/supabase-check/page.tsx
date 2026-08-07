@@ -33,7 +33,9 @@ export default async function SupabaseCheckPage() {
           ))}
         </ul>
 
-        {!health.databaseReachable ? <p className="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">Migration has not been applied yet, or the database tables are unavailable. Run <code>supabase/migrations/001_initial_schema.sql</code> manually, then refresh.</p> : null}
+        {!health.databaseReachable ? <p className="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">Migration 001 has not been applied yet, or the database tables are unavailable.</p> : null}
+        {health.checks.some(check => check.key.endsWith("phase3") && !check.ok) ? <p className="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">Phase 3 is not available remotely yet. Run <code>supabase/migrations/002_players_buckets_planning.sql</code> manually, then refresh.</p> : null}
+        {health.checks.some(check => check.key.endsWith("phase4") && !check.ok) ? <p className="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">Phase 4 is not available remotely yet. Run <code>supabase/migrations/003_live_auction.sql</code> manually, then refresh.</p> : null}
 
         <p className="mt-5 text-xs leading-5 text-slate-500">
           This route returns a 404 in production. Restart the development server after changing `.env.local`.

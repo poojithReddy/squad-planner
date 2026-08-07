@@ -18,6 +18,8 @@ type SetupStatus = {
   create_team_function?: boolean;
   team_assets_bucket?: boolean;
 };
+type Phase3Status = { auction_buckets?: boolean; players?: boolean; probable_teams?: boolean; probable_team_players?: boolean; rls?: boolean; cross_team_constraints?: boolean };
+type Phase4Status = { auction_history?: boolean; lifecycle_history?: boolean; auction_rpc?: boolean; lifecycle_rpc?: boolean; realtime_players?: boolean; realtime_history?: boolean };
 
 export async function getSupabaseHealth() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -30,7 +32,7 @@ export async function getSupabaseHealth() {
   }
 
   const supabase = await createClient();
-  const [authResponse, profiles, teams, members, setup] = await Promise.all([
+  const [authResponse, profiles, teams, members, setup, phase3, phase4] = await Promise.all([
     fetch(`${url!.replace(/\/$/, "")}/auth/v1/settings`, {
       headers: { apikey: key! },
       cache: "no-store",
@@ -39,10 +41,12 @@ export async function getSupabaseHealth() {
     supabase.from("teams").select("id", { head: true, count: "exact" }).limit(1),
     supabase.from("team_members").select("id", { head: true, count: "exact" }).limit(1),
     supabase.rpc("app_setup_status"),
+    supabase.rpc("phase3_setup_status"),
+    supabase.rpc("phase4_setup_status"),
   ]);
 
   const setupStatus = isSetupStatus(setup.data) ? setup.data : {};
-  return buildResult(
+  const result = buildResult(
     true,
     true,
     authResponse,
@@ -52,6 +56,20 @@ export async function getSupabaseHealth() {
     !setup.error,
     setupStatus,
   );
+  const phase3Status = isSetupStatus(phase3.data) ? phase3.data as Phase3Status : {};
+  result.checks.push(
+    { key: "players_phase3", label: "Phase 3 player pool", ok: !phase3.error && phase3Status.players === true },
+    { key: "buckets_phase3", label: "Phase 3 auction buckets", ok: !phase3.error && phase3Status.auction_buckets === true },
+    { key: "planning_phase3", label: "Phase 3 probable plans", ok: !phase3.error && phase3Status.probable_teams === true && phase3Status.probable_team_players === true },
+    { key: "security_phase3", label: "Phase 3 RLS and team constraints", ok: !phase3.error && phase3Status.rls === true && phase3Status.cross_team_constraints === true },
+  );
+  const phase4Status = isSetupStatus(phase4.data) ? phase4.data as Phase4Status : {};
+  result.checks.push(
+    { key: "history_phase4", label: "Phase 4 auction audit history", ok: !phase4.error && phase4Status.auction_history === true && phase4Status.lifecycle_history === true },
+    { key: "rpc_phase4", label: "Phase 4 atomic auction functions", ok: !phase4.error && phase4Status.auction_rpc === true && phase4Status.lifecycle_rpc === true },
+    { key: "realtime_phase4", label: "Phase 4 Realtime publication", ok: !phase4.error && phase4Status.realtime_players === true && phase4Status.realtime_history === true },
+  );
+  return result;
 }
 
 function isSetupStatus(value: unknown): value is SetupStatus {

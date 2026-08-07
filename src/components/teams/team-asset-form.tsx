@@ -1,0 +1,8 @@
+"use client";
+import { useActionState,useEffect,useState } from "react";
+import Image from "next/image";
+import { uploadTeamAsset } from "@/app/(protected)/teams/[teamId]/assets/actions";
+import { FormMessage } from "@/components/forms/form-message";
+import { SubmitButton } from "@/components/forms/submit-button";
+import { initialFormState } from "@/types/forms";
+export function TeamAssetForm({teamId,kind}:{teamId:string;kind:"logo"|"banner"}){const[state,action]=useActionState(uploadTeamAsset.bind(null,teamId,kind),initialFormState);const[preview,setPreview]=useState<string|null>(null);useEffect(()=>()=>{if(preview)URL.revokeObjectURL(preview)},[preview]);const isLogo=kind==="logo";return <form action={action} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h3 className="font-bold">{isLogo?"Team logo":"Team banner"}</h3><p className="mt-1 text-sm text-slate-500">PNG, JPEG or WEBP · max {isLogo?"2":"5"} MB · prefer {isLogo?"square":"landscape"}</p>{preview?<Image src={preview} unoptimized width={isLogo?160:800} height={isLogo?160:267} alt="Selected preview" className={`mt-4 w-full rounded-xl object-cover ${isLogo?"aspect-square max-w-40":"aspect-[3/1]"}`}/>:null}<input name="file" type="file" required accept="image/png,image/jpeg,image/webp" onChange={e=>{const file=e.target.files?.[0];setPreview(file?URL.createObjectURL(file):null)}} className="mt-4 block w-full rounded-xl border border-slate-300 p-3 text-sm"/><div className="mt-4"><SubmitButton pendingLabel="Uploading…">Replace {kind}</SubmitButton></div><div className="mt-3"><FormMessage state={state}/></div></form>}
