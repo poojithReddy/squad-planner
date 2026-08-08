@@ -46,6 +46,18 @@ test("each plan shortlist can be filtered by bucket and remains responsive", () 
   assert.match(source, /sticky top-16/);
 });
 
+test("planning players expose a responsive profile modal with accessible close controls", () => {
+  const source = readFileSync("src/components/planning/planning-workspace.tsx", "utf8");
+  assert.match(source, /View profile/);
+  assert.match(source, /PlayerProfileModal/);
+  assert.match(source, /role="dialog"/);
+  assert.match(source, /aria-modal="true"/);
+  assert.match(source, /Close player profile/);
+  assert.match(source, /event\.key === "Escape"/);
+  assert.match(source, /event\.target === event\.currentTarget/);
+  assert.match(source, /Career \/ Imported Stats/);
+});
+
 test("player pool has responsive cards, compact filters and a read-only details route", () => {
   const page = readFileSync("src/app/(protected)/teams/[teamId]/players/page.tsx", "utf8");
   const filters = readFileSync("src/components/players/player-filters.tsx", "utf8");
