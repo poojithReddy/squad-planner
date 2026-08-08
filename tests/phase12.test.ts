@@ -35,6 +35,31 @@ test("planning counts, estimates, remove and reorder derive from optimistic stat
   assert.match(source, /\[reordered\[index\], reordered\[target\]\]/);
 });
 
+test("each plan shortlist can be filtered by bucket and remains responsive", () => {
+  const source = readFileSync("src/components/planning/planning-workspace.tsx", "utf8");
+  assert.match(source, /shortlistBucketId/);
+  assert.match(source, /visibleSelected/);
+  assert.match(source, /Filter by bucket/);
+  assert.match(source, /All buckets \(\{selected\.length\}\)/);
+  assert.match(source, /Showing \{visibleSelected\.length\} of \{selected\.length\} players/);
+  assert.match(source, /xl:grid-cols-\[minmax\(0,1\.05fr\)_minmax\(24rem,0\.95fr\)\]/);
+  assert.match(source, /sticky top-16/);
+});
+
+test("player pool has responsive cards, compact filters and a read-only details route", () => {
+  const page = readFileSync("src/app/(protected)/teams/[teamId]/players/page.tsx", "utf8");
+  const filters = readFileSync("src/components/players/player-filters.tsx", "utf8");
+  const view = readFileSync("src/app/(protected)/teams/[teamId]/players/[playerId]/page.tsx", "utf8");
+  assert.match(page, /sm:grid-cols-2 lg:hidden/);
+  assert.match(page, /players\/\$\{player\.id\}`/);
+  assert.match(page, />View</);
+  assert.match(filters, /filtersOpen/);
+  assert.match(filters, /aria-expanded=\{filtersOpen\}/);
+  assert.match(view, /Player details/);
+  assert.match(view, /Career \/ Imported Stats/);
+  assert.match(view, /Read-only auction planning/);
+});
+
 test("budget update is permission checked, validated and does not modify bucket budgets", () => {
   const action = readFileSync("src/app/(protected)/teams/[teamId]/buckets/actions.ts", "utf8");
   assert.match(action, /requireTeamAccess\(teamId, true\)/);
