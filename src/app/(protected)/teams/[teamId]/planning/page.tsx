@@ -1,20 +1,25 @@
-import Link from "next/link";
-import { PlayerPlanSearch } from "@/components/planning/player-plan-search";
+import { PlanningWorkspace } from "@/components/planning/planning-workspace";
 import { TeamNav } from "@/components/teams/team-nav";
 import { requireTeamAccess } from "@/lib/planning/access";
-import { getBuckets,getPlanningData,getPlayers } from "@/lib/planning/queries";
+import { getBuckets, getPlanningData, getPlayers } from "@/lib/planning/queries";
 import { getAuthorisedTeam } from "@/lib/teams/queries";
-import { AVAILABILITY_LABELS,formatMoney,PRIORITY_LABELS } from "@/types/planning";
-import { addToPlan,movePlanPlayer,removeFromPlan } from "./actions";
 
-export default async function PlanningPage({params,searchParams}:{params:Promise<{teamId:string}>;searchParams:Promise<{plan?:string}>}){
-  const{teamId}=await params;const requested=(await searchParams).plan;const label=requested==="B"||requested==="C"?requested:"A";
-  const[{canEdit},team,players,buckets,{plans,selections}]=await Promise.all([requireTeamAccess(teamId),getAuthorisedTeam(teamId),getPlayers(teamId),getBuckets(teamId),getPlanningData(teamId)]);
-  if(!team)return null;
-  const plan=plans.find(item=>item.plan_label===label),selected=plan?selections.filter(item=>item.probable_team_id===plan.id):[];
-  const selectedPlayers=selected.map(selection=>({selection,player:players.find(player=>player.id===selection.player_id)})).filter(item=>item.player);
-  const costs=Object.fromEntries(plans.map(item=>[item.plan_label,selections.filter(selection=>selection.probable_team_id===item.id).reduce((sum,selection)=>sum+(players.find(player=>player.id===selection.player_id)?.expected_price??0),0)]));
-  const allocation=buckets.reduce((sum,bucket)=>sum+bucket.planned_budget,0);
-  return <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8"><TeamNav teamId={teamId}/><h1 className="text-3xl font-bold text-ink">Pre-auction planning</h1><p className="mt-2 text-slate-500">Compare shortlists, bucket allocation and availability before auction day.</p><section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"><Kpi label="Team budget" value={formatMoney(team.total_auction_budget)}/><Kpi label="Bucket budget" value={formatMoney(allocation)} warning={allocation>team.total_auction_budget}/>{(["A","B","C"] as const).map(value=><Kpi key={value} label={`Plan ${value} estimate`} value={formatMoney(Number(costs[value]??0))} warning={team.total_auction_budget>0&&Number(costs[value]??0)>team.total_auction_budget}/>)}</section><nav className="mt-7 flex gap-2" aria-label="Probable plans">{["A","B","C"].map(value=><Link key={value} href={`?plan=${value}`} aria-current={label===value?"page":undefined} className={`min-h-11 rounded-xl border px-5 py-3 text-sm font-bold ${label===value?"team-soft":"border-slate-200 bg-white text-slate-600"}`}>Plan {value}</Link>)}</nav><div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]"><section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><h2 className="text-xl font-bold">Plan {label} shortlist</h2><span className="text-sm font-semibold text-slate-500">{selected.length} selected</span></div><div className="mt-4 space-y-3">{selectedPlayers.map(({selection,player},index)=><article key={selection.id} className="rounded-xl border border-slate-200 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-bold text-ink">{index+1}. {player!.name}</p><p className="mt-1 text-sm text-slate-500">{player!.role??"Role not set"} · {player!.auction_buckets?.name??"Unassigned"}</p></div>{canEdit?<div className="flex"><form action={movePlanPlayer.bind(null,teamId,selection.id,"up")}><button disabled={index===0} aria-label={`Move ${player!.name} up`} className="min-h-11 px-2 disabled:opacity-30">↑</button></form><form action={movePlanPlayer.bind(null,teamId,selection.id,"down")}><button disabled={index===selected.length-1} aria-label={`Move ${player!.name} down`} className="min-h-11 px-2 disabled:opacity-30">↓</button></form><form action={removeFromPlan.bind(null,teamId,selection.id)}><button className="min-h-11 px-2 text-red-700">Remove</button></form></div>:null}</div><p className="mt-2 text-sm">{player!.priority?PRIORITY_LABELS[player!.priority]:"Not ranked"} · {AVAILABILITY_LABELS[player!.availability_status]} · Expected {formatMoney(player!.expected_price)}</p></article>)}{!selected.length?<p className="rounded-xl border border-dashed p-8 text-center text-slate-500">No players selected for this plan.</p>:null}</div></section><aside className="space-y-5">{canEdit&&plan?<PlayerPlanSearch players={players} buckets={buckets} selectedIds={selected.map(item=>item.player_id)} planLabel={label} action={addToPlan.bind(null,teamId,plan.id)}/>:<section className="rounded-2xl border bg-white p-5 text-sm text-slate-500">Read-only planning access.</section>}<section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Availability overview</h2>{(["full","partial","unknown"] as const).map(status=><div key={status} className="mt-3 flex justify-between text-sm"><span>{AVAILABILITY_LABELS[status]}</span><strong>{players.filter(player=>player.availability_status===status).length}</strong></div>)}</section><section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Bucket overview</h2>{buckets.map(bucket=><div key={bucket.id} className="mt-3 flex justify-between gap-3 text-sm"><span>{bucket.name}</span><strong>{players.filter(player=>player.bucket_id===bucket.id).length} / {bucket.minimum_players}–{bucket.maximum_players??"∞"}</strong></div>)}</section></aside></div></div>;
+export default async function PlanningPage({ params, searchParams }: { params: Promise<{ teamId: string }>; searchParams: Promise<{ plan?: string }> }) {
+  const { teamId } = await params;
+  const requested = (await searchParams).plan;
+  const initialPlan = requested === "B" || requested === "C" ? requested : "A";
+  const [{ canEdit }, team, players, buckets, { plans, selections }] = await Promise.all([
+    requireTeamAccess(teamId),
+    getAuthorisedTeam(teamId),
+    getPlayers(teamId),
+    getBuckets(teamId),
+    getPlanningData(teamId),
+  ]);
+  if (!team) return null;
+  return <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
+    <TeamNav teamId={teamId} />
+    <h1 className="text-3xl font-bold text-ink">Pre-auction planning</h1>
+    <p className="mt-2 text-slate-500">Build and compare responsive shortlists before auction day.</p>
+    <PlanningWorkspace teamId={teamId} teamBudget={team.total_auction_budget} players={players} buckets={buckets} plans={plans} initialSelections={selections} initialPlan={initialPlan} canEdit={canEdit} />
+  </div>;
 }
-function Kpi({label,value,warning=false}:{label:string;value:string;warning?:boolean}){return <div className={`rounded-2xl border p-4 ${warning?"border-amber-300 bg-amber-50":"border-slate-200 bg-white"}`}><p className="text-xs font-bold uppercase text-slate-500">{label}</p><p className="mt-2 text-xl font-bold">{value}</p>{warning?<p className="mt-1 text-xs font-semibold text-amber-700">Over budget plan</p>:null}</div>}

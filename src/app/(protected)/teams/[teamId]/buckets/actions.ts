@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireTeamAccess } from "@/lib/planning/access";
+import { normalizeTeamBudget } from "@/lib/planning/budget";
 import { createClient } from "@/lib/supabase/server";
 import type { FormState } from "@/types/forms";
 
@@ -23,3 +24,17 @@ export async function createBucket(teamId: string, _state: FormState, formData: 
 export async function updateBucket(teamId: string, bucketId: string, _state: FormState, formData: FormData): Promise<FormState> { await requireTeamAccess(teamId, true); const parsed = parse(formData); if (!parsed.data) return { status: "error", message: parsed.error ?? "Invalid bucket." }; const supabase = await createClient(); const { error } = await supabase.from("auction_buckets").update(parsed.data).eq("team_id", teamId).eq("id", bucketId); if (error) return { status: "error", message: "We couldn't update this bucket. Please try again." }; revalidatePath(`/teams/${teamId}/buckets`); return { status: "success", message: "Bucket updated." }; }
 export async function deleteBucket(teamId: string, bucketId: string) { await requireTeamAccess(teamId, true); const supabase = await createClient(); const { error } = await supabase.from("auction_buckets").delete().eq("team_id", teamId).eq("id", bucketId); if (error) throw new Error("Unable to delete this bucket."); revalidatePath(`/teams/${teamId}/buckets`); revalidatePath(`/teams/${teamId}/players`); }
 export async function moveBucket(teamId: string, bucketId: string, direction: "up" | "down") { await requireTeamAccess(teamId, true); const supabase = await createClient(); const { data } = await supabase.from("auction_buckets").select("id,display_order").eq("team_id", teamId).order("display_order").order("name"); if (!data) return; const index = data.findIndex(row => row.id === bucketId); const swapIndex = direction === "up" ? index - 1 : index + 1; if (index < 0 || swapIndex < 0 || swapIndex >= data.length) return; await Promise.all([supabase.from("auction_buckets").update({ display_order: data[swapIndex].display_order }).eq("id", data[index].id), supabase.from("auction_buckets").update({ display_order: data[index].display_order }).eq("id", data[swapIndex].id)]); revalidatePath(`/teams/${teamId}/buckets`); }
+
+export async function updateTeamBudget(teamId: string, budget: number): Promise<{ ok: boolean; budget?: number; message?: string }> {
+  await requireTeamAccess(teamId, true);
+  const normalized = normalizeTeamBudget(budget);
+  if (normalized === null) return { ok: false, message: "Team budget must be a number of 0 or greater." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("teams").update({ total_auction_budget: normalized }).eq("id", teamId).select("total_auction_budget").single();
+  if (error || !data) return { ok: false, message: "We couldn't update the team budget. Please try again." };
+  revalidatePath(`/teams/${teamId}/buckets`);
+  revalidatePath(`/teams/${teamId}/planning`);
+  revalidatePath(`/teams/${teamId}/auction`);
+  revalidatePath(`/teams/${teamId}`);
+  return { ok: true, budget: Number(data.total_auction_budget) };
+}
