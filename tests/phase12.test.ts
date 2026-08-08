@@ -35,6 +35,19 @@ test("planning counts, estimates, remove and reorder derive from optimistic stat
   assert.match(source, /\[reordered\[index\], reordered\[target\]\]/);
 });
 
+test("filtered shortlist reorder swaps the adjacent visible player and explains its state", () => {
+  const source = readFileSync("src/components/planning/planning-workspace.tsx", "utf8");
+  const action = readFileSync("src/app/(protected)/teams/[teamId]/planning/actions.ts", "utf8");
+  assert.match(source, /visibleSelected\.findIndex/);
+  assert.match(source, /targetVisibleIndex/);
+  assert.match(source, /targetSelection\.id/);
+  assert.match(source, /Reorder controls move players within this bucket view/);
+  assert.match(source, /↑ Up/);
+  assert.match(source, /↓ Down/);
+  assert.match(action, /targetSelectionId\?: string/);
+  assert.match(action, /requestedIndex/);
+});
+
 test("each plan shortlist can be filtered by bucket and remains responsive", () => {
   const source = readFileSync("src/components/planning/planning-workspace.tsx", "utf8");
   assert.match(source, /shortlistBucketId/);

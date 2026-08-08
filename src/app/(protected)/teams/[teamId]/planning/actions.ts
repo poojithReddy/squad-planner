@@ -39,7 +39,7 @@ export async function removeFromPlan(teamId: string, selectionId: string): Promi
   return { ok: true };
 }
 
-export async function movePlanPlayer(teamId: string, selectionId: string, direction: "up" | "down"): Promise<PlanningMutationResult> {
+export async function movePlanPlayer(teamId: string, selectionId: string, direction: "up" | "down", targetSelectionId?: string): Promise<PlanningMutationResult> {
   await requireTeamAccess(teamId, true);
   const supabase = await createClient();
   const { data: current } = await supabase.from("probable_team_players").select("probable_team_id").eq("team_id", teamId).eq("id", selectionId).maybeSingle();
@@ -47,7 +47,8 @@ export async function movePlanPlayer(teamId: string, selectionId: string, direct
   const { data } = await supabase.from("probable_team_players").select("id,display_order").eq("team_id", teamId).eq("probable_team_id", current.probable_team_id).order("display_order");
   if (!data) return { ok: false, message: "We couldn't load the current plan order." };
   const index = data.findIndex(row => row.id === selectionId);
-  const swapIndex = direction === "up" ? index - 1 : index + 1;
+  const requestedIndex = targetSelectionId ? data.findIndex(row => row.id === targetSelectionId) : -1;
+  const swapIndex = requestedIndex >= 0 ? requestedIndex : direction === "up" ? index - 1 : index + 1;
   if (index < 0 || swapIndex < 0 || swapIndex >= data.length) return { ok: true };
   const [first, second] = await Promise.all([
     supabase.from("probable_team_players").update({ display_order: data[swapIndex].display_order }).eq("team_id", teamId).eq("id", data[index].id),
