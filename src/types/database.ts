@@ -64,6 +64,11 @@ export interface Database {
       };
       tournament_members:{Row:{id:string;tournament_id:string;user_id:string;role:TournamentRole;created_at:string;updated_at:string};Insert:{id?:string;tournament_id:string;user_id:string;role:TournamentRole;created_at?:string;updated_at?:string};Update:{role?:TournamentRole;updated_at?:string};Relationships:[]};
       platform_roles:{Row:{id:string;user_id:string;role:PlatformRole;created_at:string;updated_at:string};Insert:{id?:string;user_id:string;role:PlatformRole;created_at?:string;updated_at?:string};Update:{role?:PlatformRole;updated_at?:string};Relationships:[]};
+      app_modules:{Row:{id:string;key:string;name:string;scope:"platform"|"tournament"|"team";description:string|null;is_active:boolean;sort_order:number;created_at:string};Insert:{id?:string;key:string;name:string;scope:"platform"|"tournament"|"team";description?:string|null;is_active?:boolean;sort_order?:number;created_at?:string};Update:Partial<Database["public"]["Tables"]["app_modules"]["Insert"]>;Relationships:[]};
+      permission_actions:{Row:{id:string;key:string;name:string};Insert:{id?:string;key:string;name:string};Update:{name?:string};Relationships:[]};
+      role_permissions:{Row:{id:string;role_scope:string;role_key:string;config_scope_type:"global"|"tournament";scope_id:string|null;module_id:string;action_id:string;allowed:boolean;created_at:string;updated_at:string};Insert:{id?:string;role_scope:string;role_key:string;config_scope_type?:"global"|"tournament";scope_id?:string|null;module_id:string;action_id:string;allowed?:boolean};Update:{allowed?:boolean;updated_at?:string};Relationships:[]};
+      user_permission_overrides:{Row:{id:string;user_id:string;scope_type:"platform"|"tournament"|"team";scope_id:string|null;module_id:string;action_id:string;effect:"allow"|"deny";created_by:string;created_at:string;updated_at:string};Insert:{id?:string;user_id:string;scope_type:"platform"|"tournament"|"team";scope_id?:string|null;module_id:string;action_id:string;effect:"allow"|"deny";created_by:string};Update:{effect?:"allow"|"deny";updated_at?:string};Relationships:[]};
+      permission_audit_log:{Row:{id:string;actor_user_id:string;target_user_id:string|null;event_type:string;role_scope:string|null;role_key:string|null;scope_type:string;scope_id:string|null;module_key:string|null;action_key:string|null;previous_value:Json;new_value:Json;created_at:string};Insert:never;Update:never;Relationships:[]};
       tournament_invitations:{Row:{id:string;tournament_id:string;email:string;full_name:string|null;tournament_role:TournamentRole;invited_by:string;status:"pending"|"accepted"|"cancelled";accepted_by:string|null;accepted_at:string|null;created_at:string;updated_at:string};Insert:{id?:string;tournament_id:string;email:string;full_name?:string|null;tournament_role:TournamentRole;invited_by:string;status?:"pending"|"accepted"|"cancelled";accepted_by?:string|null;accepted_at?:string|null;created_at?:string;updated_at?:string};Update:Partial<Database["public"]["Tables"]["tournament_invitations"]["Insert"]>;Relationships:[]};
       team_invitations:{Row:{id:string;tournament_id:string;team_id:string;email:string;full_name:string|null;team_role:Exclude<TeamRole,"owner">;invited_by:string;status:"pending"|"accepted"|"cancelled";accepted_by:string|null;accepted_at:string|null;created_at:string;updated_at:string};Insert:{id?:string;tournament_id:string;team_id:string;email:string;full_name?:string|null;team_role:Exclude<TeamRole,"owner">;invited_by:string;status?:"pending"|"accepted"|"cancelled";accepted_by?:string|null;accepted_at?:string|null;created_at?:string;updated_at?:string};Update:Partial<Database["public"]["Tables"]["team_invitations"]["Insert"]>;Relationships:[]};
       auction_buckets: {
@@ -174,6 +179,18 @@ export interface Database {
       mark_tournament_player_unsold:{Args:{p_auction_id:string;p_player_id:string};Returns:Database["public"]["Tables"]["tournament_players"]["Row"]};
       undo_tournament_sale:{Args:{p_auction_id:string;p_player_id:string};Returns:Database["public"]["Tables"]["tournament_players"]["Row"]};
       phase16_setup_status:{Args:Record<PropertyKey,never>;Returns:Json};
+      current_user_has_permission:{Args:{p_module_key:string;p_action_key:string;p_scope_type:"platform"|"tournament"|"team";p_scope_id?:string|null};Returns:boolean};
+      get_effective_permissions:{Args:{p_scope_type:"platform"|"tournament"|"team";p_scope_id?:string|null};Returns:Json};
+      get_role_permission_matrix:{Args:{p_role_scope:string;p_role_key:string;p_tournament_id?:string|null};Returns:Json};
+      get_user_effective_permissions:{Args:{p_user_id:string;p_scope_type:string;p_scope_id:string|null};Returns:Json};
+      set_role_permissions:{Args:{p_role_scope:string;p_role_key:string;p_config_scope_type:string;p_scope_id:string|null;p_permissions:Json};Returns:number};
+      reset_role_permissions:{Args:{p_role_scope:string;p_role_key:string;p_tournament_id:string};Returns:number};
+      set_user_permission_override:{Args:{p_user_id:string;p_scope_type:string;p_scope_id:string|null;p_module_key:string;p_action_key:string;p_effect:"allow"|"deny"};Returns:Database["public"]["Tables"]["user_permission_overrides"]["Row"]};
+      clear_user_permission_overrides:{Args:{p_user_id:string;p_scope_type:string;p_scope_id:string|null};Returns:number};
+      phase17_setup_status:{Args:Record<PropertyKey,never>;Returns:Json};
+      rbac_update_player_auction_status:{Args:{p_team_id:string;p_player_id:string;p_expected_status:AuctionStatus;p_new_status:AuctionStatus;p_sold_price?:number;p_override_squad_limit?:boolean;p_override_bucket_max?:boolean};Returns:Database["public"]["Tables"]["players"]["Row"]};
+      rbac_update_auction_lifecycle:{Args:{p_team_id:string;p_expected_status:AuctionLifecycle;p_new_status:AuctionLifecycle};Returns:AuctionLifecycle};
+      rbac_place_tournament_bid:{Args:{p_auction_id:string;p_team_id:string;p_amount:number};Returns:Database["public"]["Tables"]["auction_bids"]["Row"]};
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

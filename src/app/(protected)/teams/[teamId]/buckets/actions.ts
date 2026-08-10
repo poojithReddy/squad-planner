@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireTeamAccess } from "@/lib/planning/access";
+import { requirePermission } from "@/lib/permissions/server";
 import { normalizeTeamBudget } from "@/lib/planning/budget";
 import { createClient } from "@/lib/supabase/server";
 import type { FormState } from "@/types/forms";
+
+async function requireTeamAccess(teamId:string,edit=true){void edit;return requirePermission({module:"team_buckets",action:"manage",scopeType:"team",scopeId:teamId,mode:"mutation"})}
 
 function parse(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();

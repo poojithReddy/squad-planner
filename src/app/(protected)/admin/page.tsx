@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { requireSuperAdmin } from "@/lib/platform/admin-access";
+import { requirePermission } from "@/lib/permissions/server";
 
 export default async function SuperAdminPage(){
+  await requirePermission({module:"admin_dashboard",action:"view",scopeType:"platform",scopeId:null});
   const{supabase}=await requireSuperAdmin();
   const[{data:tournaments},{count:teams},{count:admins}]=await Promise.all([
     supabase.from("tournaments").select("id,name,start_date,end_date,status").order("created_at",{ascending:false}),

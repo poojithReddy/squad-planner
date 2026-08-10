@@ -1,0 +1,3 @@
+"use server";
+import {revalidatePath}from"next/cache";import{requirePermission}from"@/lib/permissions/server";import{createClient}from"@/lib/supabase/server";import type{Json}from"@/types/database";
+export async function savePlatformRolePermissions(data:FormData){await requirePermission({module:"platform_users",action:"manage",scopeType:"platform",scopeId:null,mode:"mutation"});const permissions=JSON.parse(String(data.get("permissions")||"[]")) as Json;const supabase=await createClient();const{error}=await supabase.rpc("set_role_permissions",{p_role_scope:"platform",p_role_key:"super_admin",p_config_scope_type:"global",p_scope_id:null,p_permissions:permissions});if(error)throw new Error("Permissions could not be saved.");revalidatePath("/admin/roles")}

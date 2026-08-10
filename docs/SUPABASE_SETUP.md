@@ -427,3 +427,22 @@ Manual Phase 16 smoke test:
 5. Open Tournament Admin → Live Auction, create tournament buckets and schedule the auction.
 6. Select a random player, start bidding, sign in as a Captain in another browser, and place a bid from the team Auction page.
 7. Confirm the winning bid and verify the player, squad, budget, bid history, and other connected sessions update.
+
+## Migration 012 — Module-Based RBAC
+
+Migration 012 is required before deploying the Phase 17 application code. It does not replace or modify Migrations 001–011.
+
+1. Open **Supabase Dashboard → SQL Editor → New Query**.
+2. Open `supabase/migrations/012_module_rbac.sql` locally.
+3. Copy the complete file into the SQL Editor and click **Run** once.
+4. Verify the installation:
+
+```sql
+select public.phase17_setup_status();
+```
+
+Every returned value must be `true`. Then sign out and sign in again. Super Admins can open `/admin/roles`; Tournament Admins can open `/tournaments/{tournamentId}/admin/roles`.
+
+Permission resolution is default-deny. The applicable role template is loaded for the platform, tournament, or team scope; a tournament-specific role template overrides its global default. An explicit user `allow` overrides a role default, while an explicit user `deny` has final precedence. Overrides never create membership, so removing tournament/team access also removes effective access even if an old override remains.
+
+Do not grant anonymous access to the RBAC tables or helper functions. Do not edit an already-applied migration; use the next migration number for future permission changes.

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { requireTeamAccess } from "@/lib/planning/access";
+import { requirePermission } from "@/lib/permissions/server";
 import { createClient } from "@/lib/supabase/server";
 import type { AvailabilityStatus } from "@/types/database";
 import type { FormState } from "@/types/forms";
@@ -32,7 +32,7 @@ function parsePlayer(formData: FormData) {
 }
 
 export async function createPlayer(teamId: string, _state: FormState, formData: FormData): Promise<FormState> {
-  await requireTeamAccess(teamId, true);
+  await requirePermission({module:"team_players",action:"create",scopeType:"team",scopeId:teamId,mode:"mutation"});
   const parsed = parsePlayer(formData);
   if (!parsed.data) return { status: "error", message: parsed.error ?? "Invalid player." };
   const supabase = await createClient();
@@ -43,7 +43,7 @@ export async function createPlayer(teamId: string, _state: FormState, formData: 
 }
 
 export async function updatePlayer(teamId: string, playerId: string, _state: FormState, formData: FormData): Promise<FormState> {
-  await requireTeamAccess(teamId, true);
+  await requirePermission({module:"team_players",action:"edit",scopeType:"team",scopeId:teamId,mode:"mutation"});
   const parsed = parsePlayer(formData);
   if (!parsed.data) return { status: "error", message: parsed.error ?? "Invalid player." };
   const supabase = await createClient();
@@ -54,7 +54,7 @@ export async function updatePlayer(teamId: string, playerId: string, _state: For
 }
 
 export async function deletePlayer(teamId: string, playerId: string) {
-  await requireTeamAccess(teamId, true);
+  await requirePermission({module:"team_players",action:"delete",scopeType:"team",scopeId:teamId,mode:"mutation"});
   const supabase = await createClient();
   const { error } = await supabase.from("players").delete().eq("team_id", teamId).eq("id", playerId);
   if (error) throw new Error("Unable to delete this player.");

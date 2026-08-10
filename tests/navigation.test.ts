@@ -4,6 +4,7 @@ import test from "node:test";
 import { isNavigationActive } from "../src/lib/navigation/active.ts";
 
 const navigationSource=readFileSync("src/components/layout/authenticated-navigation.tsx","utf8");
+const registrySource=readFileSync("src/lib/permissions/registry.ts","utf8");
 const shellSource=readFileSync("src/components/layout/dashboard-shell.tsx","utf8");
 
 test("desktop sidebar defaults collapsed and has accessible expand and collapse controls",()=>{
@@ -16,7 +17,7 @@ test("desktop sidebar defaults collapsed and has accessible expand and collapse 
 
 test("workspace navigation contains every primary module",()=>{
   for(const label of ["Dashboard","Players","Buckets","Planning","Auction","Squad","Tournament","Opportunities","Volunteer Duties","Reports"]){
-    assert.match(navigationSource,new RegExp(`label:\"${label}\"`));
+    assert.match(registrySource,new RegExp(`label\\s*:\\s*\"${label}\"`));
   }
   assert.match(navigationSource,/title=\{collapsed\?link\.label/);
   assert.match(navigationSource,/aria-current=\{active\?"page"/);

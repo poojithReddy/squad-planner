@@ -2,11 +2,11 @@ import "server-only";
 import { requireTeamAccess } from "@/lib/planning/access";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorisedTeam } from "@/lib/teams/queries";
-import { PLANNING_EDIT_ROLES } from "@/types/planning";
+import {getPermissionMap}from"@/lib/permissions/server";import{permissionGranted}from"@/lib/permissions/registry";
 import type { AuctionSnapshot } from "@/types/auction";
 
 export async function getAuctionSnapshot(teamId: string): Promise<AuctionSnapshot | null> {
-  const [access, team] = await Promise.all([requireTeamAccess(teamId), getAuthorisedTeam(teamId)]);
+  const [, team,permissions] = await Promise.all([requireTeamAccess(teamId), getAuthorisedTeam(teamId),getPermissionMap("team",teamId)]);
   if (!team) return null;
   const supabase = await createClient();
   const [players, buckets, plans, selections, history] = await Promise.all([
@@ -23,7 +23,7 @@ export async function getAuctionSnapshot(teamId: string): Promise<AuctionSnapsho
     team: { id: team.id, name: team.name, squad_size: team.squad_size, total_auction_budget: team.total_auction_budget, primary_colour: team.primary_colour, logoSignedUrl: team.logoSignedUrl, auction_status: team.auction_status },
     players: (players.data ?? []).map(player => ({ ...player, bucketName: player.bucket_id ? bucketNames.get(player.bucket_id) ?? null : null })),
     buckets: buckets.data ?? [], plans: plans.data ?? [], selections: selections.data ?? [], history: history.data ?? [],
-    canEdit: PLANNING_EDIT_ROLES.includes(access.role as (typeof PLANNING_EDIT_ROLES)[number]),
-    canControlLifecycle: access.role === "owner" || access.role === "captain",
+    canEdit: permissionGranted(permissions,"team_auction","manage"),
+    canControlLifecycle: permissionGranted(permissions,"team_auction","manage"),
   };
 }

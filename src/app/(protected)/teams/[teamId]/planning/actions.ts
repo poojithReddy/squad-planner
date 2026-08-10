@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireTeamAccess } from "@/lib/planning/access";
+import { requirePermission } from "@/lib/permissions/server";
 import { createClient } from "@/lib/supabase/server";
 import type { ProbableSelection } from "@/types/planning";
 
@@ -13,7 +13,7 @@ function refreshPlanning(teamId: string) {
 }
 
 export async function addToPlan(teamId: string, planId: string, playerId: string): Promise<PlanningMutationResult> {
-  await requireTeamAccess(teamId, true);
+  await requirePermission({module:"team_planning",action:"manage",scopeType:"team",scopeId:teamId,mode:"mutation"});
   if (!playerId || !planId) return { ok: false, message: "Select a player before adding to the plan." };
   const supabase = await createClient();
   const { data: plan } = await supabase.from("probable_teams").select("id").eq("id", planId).eq("team_id", teamId).maybeSingle();
@@ -31,7 +31,7 @@ export async function addToPlan(teamId: string, planId: string, playerId: string
 }
 
 export async function removeFromPlan(teamId: string, selectionId: string): Promise<PlanningMutationResult> {
-  await requireTeamAccess(teamId, true);
+  await requirePermission({module:"team_planning",action:"manage",scopeType:"team",scopeId:teamId,mode:"mutation"});
   const supabase = await createClient();
   const { error } = await supabase.from("probable_team_players").delete().eq("team_id", teamId).eq("id", selectionId);
   if (error) return { ok: false, message: "We couldn't remove this player. Please try again." };
@@ -40,7 +40,7 @@ export async function removeFromPlan(teamId: string, selectionId: string): Promi
 }
 
 export async function movePlanPlayer(teamId: string, selectionId: string, direction: "up" | "down", targetSelectionId?: string): Promise<PlanningMutationResult> {
-  await requireTeamAccess(teamId, true);
+  await requirePermission({module:"team_planning",action:"manage",scopeType:"team",scopeId:teamId,mode:"mutation"});
   const supabase = await createClient();
   const { data: current } = await supabase.from("probable_team_players").select("probable_team_id").eq("team_id", teamId).eq("id", selectionId).maybeSingle();
   if (!current) return { ok: false, message: "This plan selection no longer exists." };
