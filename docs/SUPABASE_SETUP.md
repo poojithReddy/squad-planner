@@ -402,3 +402,28 @@ on conflict (user_id, role) do nothing;
 ```
 
 Sign out and sign in again, then open `/admin`. Never put a real user UUID or email in a migration. This platform role grants administrative tournament setup access; it does not create `team_members` access and therefore does not expose private team plans, expected prices, priorities, notes, or recommendations.
+
+## Migration 011 — Tournament registration and central live auction
+
+Apply `supabase/migrations/011_registration_live_auction.sql` only after Migration 010:
+
+1. Open Supabase Dashboard → **SQL Editor** → **New Query**.
+2. Open `supabase/migrations/011_registration_live_auction.sql` locally.
+3. Copy the entire file, paste it into SQL Editor, and click **Run**.
+4. Run the read-only verification query below. Every value should be `true`.
+
+```sql
+select public.phase16_setup_status();
+```
+
+Migration 011 creates the public registration form model, tournament player pool, tournament auction buckets, live auction/bid/history tables, restricted public registration RPCs, atomic bid/winner functions, RLS, indexes, and Realtime publication entries. It also repairs legacy team-owned tournament foreign keys so a centrally managed tournament can safely contain multiple teams.
+
+Manual Phase 16 smoke test:
+
+1. Open Tournament Admin → Registration, create a form, copy the one-time secure link, and open registration.
+2. Submit the public link in an Incognito window without signing in.
+3. Approve the response in Tournament Admin → Player Pool.
+4. Import tournament teams from `.xlsx` or `.csv`, then confirm Captain/Vice Captain invitations.
+5. Open Tournament Admin → Live Auction, create tournament buckets and schedule the auction.
+6. Select a random player, start bidding, sign in as a Captain in another browser, and place a bid from the team Auction page.
+7. Confirm the winning bid and verify the player, squad, budget, bid history, and other connected sessions update.
