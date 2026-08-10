@@ -1,15 +1,23 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireTeamAccess } from "@/lib/planning/access";
 import { buildTeamImagePath, TEAM_IMAGE_BUCKET, type TeamImageKind, validateTeamImage } from "@/lib/storage/team-images";
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth/session";
 
 const BRANDING_ROLES = new Set(["owner", "captain"]);
 type UploadPreparation={ok:true;path:string}|{ok:false;message:string};
 type UploadCompletion={ok:true;message:string}|{ok:false;message:string};
 
-async function requireBrandingAccess(teamId:string){const access=await requireTeamAccess(teamId);return BRANDING_ROLES.has(access.role)}
+async function requireBrandingAccess(teamId:string){
+  const user=await requireUser(),supabase=await createClient();
+  const{data:membership}=await supabase.from("team_members").select("role").eq("team_id",teamId).eq("user_id",user.id).maybeSingle();
+  if(membership&&BRANDING_ROLES.has(membership.role))return true;
+  const{data:team}=await supabase.from("teams").select("tournament_id").eq("id",teamId).maybeSingle();
+  if(!team?.tournament_id)return false;
+  const{data:admin}=await supabase.from("tournament_members").select("id").eq("tournament_id",team.tournament_id).eq("user_id",user.id).eq("role","tournament_admin").maybeSingle();
+  return Boolean(admin);
+}
 
 export async function prepareTeamAssetUpload(teamId:string,kind:TeamImageKind,file:{size:number;type:string}):Promise<UploadPreparation>{
   if(!await requireBrandingAccess(teamId))return{ok:false,message:"Only the team owner or captain can update team branding."};

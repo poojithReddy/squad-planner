@@ -1,0 +1,4 @@
+"use client";
+import { useState,useTransition } from "react";
+import { removeTeamAccess } from "@/app/(protected)/tournaments/[tournamentId]/admin/actions";
+export function RemoveAccessButton({tournamentId,teamId,userId}:{tournamentId:string;teamId:string;userId:string}){const[pending,start]=useTransition(),[message,setMessage]=useState("");return <div><button disabled={pending} onClick={()=>{if(!confirm("Remove this user's access to this team? Their account and other team memberships will remain."))return;start(async()=>{const result=await removeTeamAccess(tournamentId,teamId,userId);setMessage(result.message)})}} className="min-h-10 rounded-lg border border-red-200 px-3 text-sm font-bold text-red-700">{pending?"Removing…":"Remove Access"}</button>{message?<p className="mt-1 text-xs">{message}</p>:null}</div>}

@@ -1,0 +1,3 @@
+"use client";
+import { useRouter } from "next/navigation";
+export function TeamSwitcher({teams,currentTeamId}:{teams:{id:string;name:string}[];currentTeamId:string|null}){const router=useRouter();if(!teams.length)return null;return <label className="sr-only">Switch team<select aria-label="Switch team" value={currentTeamId??""} onChange={event=>router.push(`/teams/${event.target.value}`)} className="not-sr-only min-h-10 max-w-48 rounded-xl border bg-white px-3 text-sm font-bold"><option value="" disabled>My Teams</option>{teams.map(team=><option key={team.id} value={team.id}>{team.name}</option>)}</select></label>}

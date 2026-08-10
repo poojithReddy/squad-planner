@@ -1,9 +1,28 @@
 "use server";
 import { revalidatePath } from "next/cache";import { requireTeamAccess } from "@/lib/planning/access";import { createClient } from "@/lib/supabase/server";
+import type { FixtureImportRow } from "@/lib/tournament/fixture-import";
 const val=(f:FormData,k:string)=>String(f.get(k)??"").trim();const nullable=(f:FormData,k:string)=>val(f,k)||null;
 export async function saveTournament(teamId:string,tournamentId:string|undefined,formData:FormData){await requireTeamAccess(teamId,true);const name=val(formData,"name"),start=val(formData,"startDate"),end=nullable(formData,"endDate"),def=Number(val(formData,"defaultSize")),max=Number(val(formData,"maximumSize"));if(!name||!start||!Number.isInteger(def)||def<=0||!Number.isInteger(max)||max<=0||def>max||end&&end<start)throw new Error("Check tournament name, dates and squad sizes.");const record={team_id:teamId,name,start_date:start,end_date:end,location:nullable(formData,"location"),notes:nullable(formData,"notes"),default_match_squad_size:def,maximum_match_squad_size:max};const s=await createClient();const{error}=tournamentId?await s.from("tournaments").update(record).eq("id",tournamentId).eq("team_id",teamId):await s.from("tournaments").insert(record);if(error)throw new Error(error.message);revalidatePath(`/teams/${teamId}/tournament`)}
 export async function saveFixture(teamId:string,tournamentId:string,matchId:string|undefined,formData:FormData){await requireTeamAccess(teamId,true);const opponent=val(formData,"opponent"),date=val(formData,"date");const sizeText=val(formData,"squadSize"),numText=val(formData,"matchNumber");if(!opponent||!date)throw new Error("Opponent and match date are required.");const record={team_id:teamId,tournament_id:tournamentId,opponent_name:opponent,match_date:date,match_time:nullable(formData,"time"),venue:nullable(formData,"venue"),round_name:nullable(formData,"round"),match_number:numText?Number(numText):null,squad_size:sizeText?Number(sizeText):null,notes:nullable(formData,"notes")};const s=await createClient();const{error}=matchId?await s.from("matches").update(record).eq("id",matchId).eq("team_id",teamId):await s.from("matches").insert(record);if(error)throw new Error(error.message);revalidatePath(`/teams/${teamId}/tournament/fixtures`)}
 export async function deleteFixture(teamId:string,matchId:string){await requireTeamAccess(teamId,true);const s=await createClient();await s.from("matches").delete().eq("id",matchId).eq("team_id",teamId);revalidatePath(`/teams/${teamId}/tournament/fixtures`)}
+export async function importFixtures(teamId:string,tournamentId:string,filename:string,rows:(FixtureImportRow&{duplicateAction:"skip"|"update"|"import"})[]){
+  const{user}=await requireTeamAccess(teamId,true);const s=await createClient();
+  const{data:tournament}=await s.from("tournaments").select("id").eq("id",tournamentId).eq("team_id",teamId).maybeSingle();
+  if(!tournament)return{ok:false,message:"Tournament not found."};
+  let imported=0,updated=0,skipped=0,failed=0;
+  for(const row of rows){
+    if(row.errors.length){failed++;continue}
+    let duplicateQuery=s.from("matches").select("id").eq("team_id",teamId).eq("tournament_id",tournamentId).eq("match_date",row.date).ilike("opponent_name",row.opponent);
+    duplicateQuery=row.time?duplicateQuery.eq("match_time",row.time):duplicateQuery.is("match_time",null);
+    const{data:existing}=await duplicateQuery.limit(1);const match=existing?.[0];
+    if(match&&row.duplicateAction==="skip"){skipped++;continue}
+    const record={team_id:teamId,tournament_id:tournamentId,match_number:row.matchNumber,match_date:row.date,match_time:row.time,opponent_name:row.opponent,venue:row.venue,round_name:row.round,notes:row.notes};
+    const{error}=match&&row.duplicateAction==="update"?await s.from("matches").update(record).eq("id",match.id).eq("team_id",teamId):await s.from("matches").insert(record);
+    if(error)failed++;else if(match&&row.duplicateAction==="update")updated++;else imported++;
+  }
+  await s.from("fixture_import_history").insert({team_id:teamId,tournament_id:tournamentId,imported_by:user.id,filename:filename.slice(0,200),total_rows:rows.length,imported_rows:imported,updated_rows:updated,skipped_rows:skipped,failed_rows:failed});
+  revalidatePath(`/teams/${teamId}/tournament/fixtures`);return{ok:true,imported,updated,skipped,failed};
+}
 export async function addMatchPlayer(teamId:string,matchId:string,playerId:string){await requireTeamAccess(teamId,true);const s=await createClient();const{error}=await s.from("match_players").insert({team_id:teamId,match_id:matchId,player_id:playerId});return error?{ok:false,message:"We couldn't add this player to the match."}:{ok:true}}
 export async function removeMatchPlayer(teamId:string,matchPlayerId:string){await requireTeamAccess(teamId,true);const s=await createClient();const{error}=await s.from("match_players").delete().eq("id",matchPlayerId).eq("team_id",teamId);return{ok:!error,message:error?"We couldn't remove this player.":undefined}}
 export async function updateMatchPlayer(teamId:string,id:string,patch:{playing_status?:"selected"|"playing"|"substitute"|"unavailable"|"not_selected";availability_override?:"available"|"unavailable"|"unknown";is_match_captain?:boolean;is_wicketkeeper?:boolean}){await requireTeamAccess(teamId,true);const s=await createClient();if(patch.is_match_captain){const{data:row}=await s.from("match_players").select("match_id").eq("id",id).eq("team_id",teamId).maybeSingle();if(row)await s.from("match_players").update({is_match_captain:false}).eq("match_id",row.match_id).eq("team_id",teamId)}const{error}=await s.from("match_players").update(patch).eq("id",id).eq("team_id",teamId);return{ok:!error,message:error?"We couldn't update this player.":undefined}}

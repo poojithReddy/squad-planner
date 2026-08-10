@@ -17,7 +17,7 @@ export function TeamCard({ team }: { team: TeamCardView }) {
           <h2 className="min-w-0 truncate pb-1 text-xl font-bold text-ink">{team.name}</h2>
         </div>
         <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-          <Detail label="Captain" value={team.captain_name} />
+          <Detail label="Captain" value={team.captain_name ?? "Not assigned"} />
           <Detail label="Vice captain" value={team.vice_captain_name || "Not set"} />
           <Detail label="Squad size" value={String(team.squad_size)} />
           <Detail label="Auction budget" value={formatBudget(team.total_auction_budget)} />

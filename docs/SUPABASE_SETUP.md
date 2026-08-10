@@ -336,3 +336,69 @@ Verify it with `select public.phase7_setup_status();`. All returned values shoul
 After Migration 006 succeeds, copy all of `supabase/migrations/007_bucket_player_stats_import.sql` into **Supabase Dashboard > SQL Editor > New Query** and click **Run**. Do not use `db push`.
 
 Verify it with `select public.phase8_setup_status();`. All returned values should be `true`. See `docs/BUCKET_PLAYER_IMPORT.md` for the supported spreadsheet format and normalization rules.
+## Migration 008 — Fixture import and public availability
+
+1. Open the Supabase Dashboard and select **SQUADPLANNERDB**.
+2. Open **SQL Editor** and choose **New Query**.
+3. Open `supabase/migrations/008_fixture_import_availability.sql` locally.
+4. Copy the complete file, paste it into the SQL Editor, and click **Run**.
+5. Verify with:
+
+```sql
+select public.phase13_setup_status();
+```
+
+Every returned value should be `true`. The migration keeps `teams`, `players`, `matches`, and `tournaments` private. Anonymous availability access is limited to the three token-validated RPC functions; the raw public token is never stored in the database.
+# Migration 009 — Tournament Admin and Multi-Team Access
+
+Apply `supabase/migrations/009_tournament_admin_access.sql` after Migration 008.
+
+1. Open Supabase Dashboard → SQL Editor → New Query.
+2. Copy the complete Migration 009 SQL file.
+3. Paste it into the intended Squad Planner project and click **Run**.
+4. Verify it with:
+
+```sql
+select public.phase14_setup_status();
+```
+
+To nominate the first Tournament Admin, obtain the intended user UUID from **Authentication → Users**, then run this once with the correct tournament and user IDs:
+
+```sql
+insert into public.tournament_members (tournament_id, user_id, role)
+values ('YOUR_TOURNAMENT_UUID', 'YOUR_AUTH_USER_UUID', 'tournament_admin')
+on conflict (tournament_id, user_id) do update set role = excluded.role;
+```
+
+This bootstrap does not add the administrator to `team_members`. Team auction planning therefore remains private unless that administrator is explicitly assigned to the team.
+
+## Invitation email configuration
+
+The application records pending invitations in the database and automatically claims them when the matching Supabase Auth email creates an account. To send Supabase invitation emails from the admin screen, configure the server-only `SUPABASE_SERVICE_ROLE_KEY` in Vercel and local `.env.local`. Never prefix this variable with `NEXT_PUBLIC_`, print it, or commit its value. Supabase Auth and the configured custom SMTP provider send the email.
+
+# Migration 010 — Super Admin and Multi-Tournament Administration
+
+Migration 009 has already established tournament/team access. Do not edit or rerun it. Apply `supabase/migrations/010_super_admin_multi_tournament.sql` next:
+
+1. Open **Supabase Dashboard → SQL Editor → New Query**.
+2. Open `supabase/migrations/010_super_admin_multi_tournament.sql` locally.
+3. Copy the entire SQL file, paste it into the SQL Editor, and click **Run** once.
+4. Verify the installation:
+
+```sql
+select public.phase15_setup_status();
+```
+
+All values should be `true`.
+
+## Bootstrap the first Super Admin
+
+There is deliberately no public “Make me Super Admin” button. First create a normal account, copy that account's UUID from **Authentication → Users**, and run this manually with the intended UUID:
+
+```sql
+insert into public.platform_roles (user_id, role)
+values ('YOUR_AUTH_USER_UUID', 'super_admin')
+on conflict (user_id, role) do nothing;
+```
+
+Sign out and sign in again, then open `/admin`. Never put a real user UUID or email in a migration. This platform role grants administrative tournament setup access; it does not create `team_members` access and therefore does not expose private team plans, expected prices, priorities, notes, or recommendations.

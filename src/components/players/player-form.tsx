@@ -14,7 +14,7 @@ export function PlayerForm({ action, buckets, player }: { action: (state: FormSt
   return <form action={formAction} className="space-y-6">
     <div className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 sm:p-7">
       <Field label="Player name"><input name="name" required defaultValue={player?.name} className={control} /></Field>
-      <Field label="Role"><select name="role" defaultValue={player?.role ?? ""} className={control}><option value="">Not set</option>{PLAYER_ROLES.map(role => <option key={role}>{role}</option>)}</select></Field>
+      <Field label="Role"><select name="role" required defaultValue={player?.role ?? ""} className={control}><option value="">Select role</option>{PLAYER_ROLES.map(role => <option key={role}>{role}</option>)}</select></Field>
       <Field label="Bucket"><select name="bucketId" defaultValue={player?.bucket_id ?? ""} className={control}><option value="">Unassigned</option>{buckets.map(bucket => <option key={bucket.id} value={bucket.id}>{bucket.name}</option>)}</select></Field>
       <Field label="Priority"><select name="priority" defaultValue={player?.priority ?? ""} className={control}><option value="">Not ranked</option>{Object.entries(PRIORITY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
       <Field label="Expected price"><input name="expectedPrice" type="number" min="0" step="0.01" defaultValue={player?.expected_price ?? 0} className={control} /></Field>
@@ -22,6 +22,11 @@ export function PlayerForm({ action, buckets, player }: { action: (state: FormSt
       {availability === "partial" ? <Field label="Available matches"><input name="availableMatches" type="number" min="0" step="1" defaultValue={player?.available_matches ?? ""} className={control} /></Field> : null}
       <Field label="Availability notes" wide><textarea name="availabilityNotes" rows={3} defaultValue={player?.availability_notes ?? ""} className={control} /></Field>
       <Field label="Planning notes" wide><textarea name="notes" rows={4} defaultValue={player?.notes ?? ""} className={control} /></Field>
+      <div className="border-t pt-5 sm:col-span-2"><h3 className="font-bold">Career / Imported Stats</h3><p className="mt-1 text-xs text-slate-500">Summary statistics only; tournament appearances remain separate.</p></div>
+      <Field label="Matches"><input name="matches" type="number" min="0" step="1" defaultValue={player?.matches??0} className={control}/></Field>
+      <Field label="Batting Score"><input name="battingScore" type="number" min="0" step="1" defaultValue={player?.batting_score??0} className={control}/></Field>
+      <Field label="Bowling Wickets"><input name="bowlingWickets" type="number" min="0" step="1" defaultValue={player?.bowling_wickets??0} className={control}/></Field>
+      <Field label="Catches"><input name="catches" type="number" min="0" step="1" defaultValue={player?.catches??0} className={control}/></Field>
     </div>
     <FormMessage state={state} />
     <div className="ml-auto max-w-xs"><SubmitButton pendingLabel="Saving…">Save player</SubmitButton></div>
